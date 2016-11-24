@@ -1,5 +1,3 @@
-
-
 node {
    
     // Build using a custom docker container
