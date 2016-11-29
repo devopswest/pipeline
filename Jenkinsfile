@@ -2,7 +2,7 @@ node
 {
    
     String jobName = "${env.JOB_NAME}"
-	if( jobName == "adc-pipeline-scipt" )
+	if( jobName == "adc-pipeline-script" )
 	{
 		// Build using a custom docker container
 		def buildContainer = docker.image('mvn-npm:latest')
