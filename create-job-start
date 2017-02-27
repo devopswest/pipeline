@@ -1,0 +1,51 @@
+import groovy.json.JsonSlurperClassic
+import jenkins.model.*
+import hudson.model.*
+import java.io.*
+import java.nio.charset.StandardCharsets
+import javax.xml.transform.stream.*
+node 
+{
+def branchesapicall = sh returnStdout: true, script:'curl ${API_URL} -u saikrishna-r-gogula:bfa1c3e9e9f845eadac0b65d73f5e3603df74cb3'
+def branches = new groovy.json.JsonSlurperClassic().parseText(branchesapicall)
+for (rec in branches)
+{
+   def branchname = rec.name
+   if (!(branchname.equals('master') || branchname.equals('develop'))){
+   def jobname = params.REPO_NAME + "_" + branchname
+   config = """<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.9">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.24">
+    <script>node
+{
+sh &apos;pwd&apos;
+sh &apos;ls -ltr&apos;
+}</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+</flow-definition>"""
+InputStream stream = new ByteArrayInputStream(config.getBytes(StandardCharsets.UTF_8));
+checkjob = Jenkins.getInstance().getItemByFullName(jobname, AbstractItem)
+    if (checkjob == null) {
+    println "Constructing job"
+    Jenkins.getInstance().createProjectFromXML(jobname, stream);
+    stream = null
+    build job: jobname, propagate: false
+    }
+    else
+    {
+    checkjob = null
+    echo "Job already exists"
+    }
+}
+}
+}	    
