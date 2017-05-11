@@ -1,0 +1,51 @@
+/*
+ * Copyright 2013 (c) Andrey Hihlovskiy
+ * License: MIT (http://opensource.org/licenses/MIT)
+ */
+
+@Grab('org.jdom:jdom2:2.0.5')
+@Grab('jaxen:jaxen:1.1.4')
+@GrabExclude('jdom:jdom')
+
+import org.jdom2.*
+import org.jdom2.input.*
+import org.jdom2.xpath.*
+import org.jdom2.output.*
+
+def xml = '''<?xml version="1.0" encoding="UTF-8"?>
+<page>
+  <!-- test comment -->
+    <content>
+        <section>
+            <link>
+                <url>/some/old/url</url>
+            </link>
+            <link>
+                <url>/some/old/url</url>
+            </link>
+        </section>
+        <section>
+            <link>
+                <url>
+                    /a/different/old/url?with=specialChars&amp;escaped=true
+                </url>
+            </link>
+        </section>
+    </content>
+</page>'''
+
+Document doc = new SAXBuilder().build(new StringReader(xml))
+
+def urls = XPathFactory.instance().compile('//url').evaluate(doc)
+
+for(def url in urls) {
+  url.text = url.text.replaceAll($//some/old/url/$, '/a/new/and/improved/url')
+  url.text = url.text.replaceAll($//a/different/old/url/$, '/a/different/new/and/improved/url')
+}
+
+new XMLOutputter().with {
+  format = Format.getRawFormat()
+  format.setLineSeparator(LineSeparator.NONE)
+  // XmlOutputter can write to OutputStream or Writer, which is sufficient for most cases
+  output(doc, System.out)
+}
